@@ -1,0 +1,151 @@
+<!Doctype html>
+<html>
+
+<head>
+  <h1>MR PORTER</h1>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <button onclick="previous()">prev</button>
+      <button onclick="next()">next</button>
+    </nav>
+  </header>
+  <main>
+    <h2>Look for books:</h2>
+    <div class="book-list">
+    </div>
+  </main>
+</body>
+<style>
+  ul {
+    list-style: none;
+  }
+
+  .book-list {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  li {
+    width: 10rem;
+  }
+
+  .img {
+    height: 300px;
+    width: 200px;
+    display: flex;
+    place-items: center;
+    justify-content: center;
+  }
+</style>
+<script>
+  const $$ = (selector) => {
+    return document.querySelectorAll(selector)
+  }
+
+  const $ = (selector) => {
+    return document.querySelector(selector)
+  }
+
+  const html = (str) => {
+    const node = document.createElement('div');
+    const child = document.createElement('div');
+    node.appendChild(child)
+    child.outerHTML = str
+    return node.firstElementChild
+  }
+
+  let state = {
+    prev: null,
+    next: null,
+  }
+
+
+  function dispatch(type, payload) {
+    const event = new CustomEvent("event", {detail: {type, payload}});
+    document.dispatchEvent(event)
+  }
+
+  function reducer(state, action) {
+    switch (action.type) {
+      case "FETCH":
+        return {
+          prev: action.payload.prev,
+          next: action.payload.next
+        }
+      default:
+        return state;
+    }
+  }
+
+  function handleEvent(event) {
+    state = reducer(state, event.detail)
+  }
+
+  document.addEventListener('event', handleEvent)
+
+  function updateAll(selector, state) {
+    $$(selector).forEach(e => e.textContent = state)
+  }
+
+  function addBook(img, title, author) {
+    const node = html(Book(img, title, author))
+    $('.book-list').appendChild(node)
+  }
+
+  function Book(img, title, author) {
+    return `
+    <div class="book-container">
+        <ul>
+          <li class="img">
+            <img src="${img}" />
+          </li>
+          <li>
+            <h3>${title}</h3>
+          </li>
+          <li>
+            <h4>${author}</h4>
+          </li>
+        </ul>
+      </div>`
+  }
+
+  async function fetchBooks(url) {
+
+    const response = await fetch(url)
+    const data = await response.json()
+    dispatch('FETCH', {prev: data.previous, next: data.next})
+    data.results.map(book => {
+      const img = book.formats["image/jpeg"]
+      const title = book.title
+      const author = book.authors[0]?.name
+      addBook(img, title, author)
+    })
+
+    observer.observe($('.book-container:last-child'))
+  }
+
+  function previous() {
+    fetchBooks(state.prev)
+  }
+
+  function next() {
+    fetchBooks(state.next)
+  }
+
+  const url = 'https://gutendex.com/books/'
+  fetchBooks(url)
+
+  let books = $$('.book-container')
+  const observer = new IntersectionObserver(entries => {
+    const lastCard = entries[0]
+    if (lastCard.isIntersecting) next()
+  })
+
+
+</script>
+
+</html>
