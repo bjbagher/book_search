@@ -125,7 +125,8 @@
       addBook(img, title, author)
     })
 
-    observer.observe($('.book-container:last-child'))
+    const books = $$('.book-container')
+    observer.observe(books[books.length / 2])
   }
 
   function previous() {
@@ -139,7 +140,6 @@
   const url = 'https://gutendex.com/books/'
   fetchBooks(url)
 
-  let books = $$('.book-container')
   const observer = new IntersectionObserver(entries => {
     const lastCard = entries[0]
     if (lastCard.isIntersecting) next()
